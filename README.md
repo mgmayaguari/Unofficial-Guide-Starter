@@ -21,11 +21,7 @@
 
 ## What This Does
 
-<!-- Three or four sentences. Which corpus you picked, and the kinds of
-     questions your system answers. Write it for someone who has never seen
-     this repo.
-
-     Milestone 5. -->
+This is a question-answering system for `campus_life`, a corpus of short student posts about university life. Ask it something specific - course workloads, dorm noise, laundry room wait times, dining hall rules - and it finds the post that answers it and quotes back from that post, naming the file it came from. Ask it something the corpus doesn't cover, like a general knowledge question, and it says so instead of guessing.
 
 ## Chunking Strategy
 
@@ -151,29 +147,11 @@ I ran my 5 `QUESTIONS` and the 5 `OUT_OF_SCOPE` questions through `app.py retrie
 
 The starter's default of 0.6 already sits almost in the middle of that gap (0.158 of margin below the lowest in-scope score, 0.187 above the highest out-of-scope one is on the other side of 0.787), so I kept it rather than moving it for no reason. I didn't need the "most corpora land between 0.45 and 0.75" note from `config.py` - my own numbers gave me the gap directly.
 
-<!-- Put the actual numbers
-     here — the table below wants all ten rows.
-
-     Milestone 4. -->
-
-| Question | In corpus? | Best distance |
-|---|---|---|
-|  |  |  |
-
 ## How I Used AI
 
-<!-- Two specific moments. For each: what you asked for, what came back, and
-     what you changed about it.
+**1.** Before writing `split_documents`, I asked Claude whether splitting on paragraph breaks with no overlap actually made sense for my corpus, or whether I should add some overlap anyway. It walked through why overlap exists in the first place - to hand back a piece of a sentence that got cut off by a fixed-size window - and pointed out that a paragraph break doesn't cut anything off, so there was nothing for overlap to restore here. Once I agreed with that reasoning, I had it write the paragraph-splitting function. When I ran it, every document's title line ("The Atrium," "Halden Hall") came out as its own useless one-line chunk, which neither of us had caught in the plan - Claude then found that all 88 documents open with that title-then-body shape and fixed the function to fold the title into the first real paragraph instead of chunking it alone.
 
-     "I asked Claude to write the chunking function from my notes. It ignored
-     the overlap, so I added that myself" is the level of detail we're after.
-     "I used AI to help me code" is not.
-
-     Milestone 5. -->
-
-**1.**
-
-**2.**
+**2.** For Milestone 4, instead of running `python app.py retrieve "..."` ten times by hand in my terminal, I had Claude run all 5 `QUESTIONS` and all 5 `OUT_OF_SCOPE` questions and report back the best distance for each one. It saved me the manual copy-pasting, but I still read the actual numbers myself and picked the cutoff - Claude just ran the commands and organized the output into the table above.
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
