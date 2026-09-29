@@ -23,23 +23,19 @@ For at least 4 of my 5 test questions, the retrieved chunks include one that
 contains the answer.
 
 **Why this target:**
-Two of my five questions are the ones I'd bet against. My work-study question
-depends on a single two-sentence document
-(`admin_campus_jobs_and_financial_aid.txt`) that turned out to say the
-opposite of what I originally expected — work-study does *not* count against
-aid, non-work-study does — so even a perfect retrieval hands the model a
-chunk that contradicts my `expects` field. My dining-hall-quality question is
-worse: nothing in the corpus discusses food quality at all, only wait times
-and hours, so no chunk could ever contain that answer regardless of
-retrieval. The other three questions each map to one plain sentence in one
-short document (HIST 118's page count, Innisfree's L-shaped wing, Aldridge's
-laundry timing), which is exactly the shape `campus_life` documents take —
-so I expect those three to be reliable. 4 of 5 is what's left once I assume
-one of the two weak questions fails outright. (I'm keeping both weak
-questions rather than swapping them for safer ones — a question whose
-`expects` field turns out to be wrong, or that has no source at all, is
-itself a useful thing to have discovered before I score anything, and it
-tells me the fix belongs in `questions.py`, not in retrieval.)
+Each of my five questions now maps to one plain sentence in one short
+document - HIST 118's page count, Innisfree's L-shaped wing, Aldridge's
+laundry timing, the work-study/financial-aid rule, and the dining dollars
+rollover. That's exactly the shape `campus_life` documents take, so in
+principle retrieval should find all five. I'm still not asking for 5 of 5,
+because two pairs of documents share a lot of vocabulary - the two dining
+posts, and `admin_campus_jobs_and_financial_aid.txt` next to `money_jobs.txt` - and with 88 short, similar-sounding posts in this corpus, a close neighbor
+grabbing the top spot instead of the exact right document is a realistic way
+for one question to miss even when the corpus itself isn't the problem.
+(Earlier drafts of the work-study and dining questions had a wrong `expects`
+value and no supporting document at all - both are now fixed in
+`questions.py`, so this criterion no longer has to plan around them failing
+outright.)
 
 ---
 
@@ -48,24 +44,21 @@ tells me the fix belongs in `questions.py`, not in retrieval.)
 Every answer the system produces names at least one source document.
 
 **Why this target:**
-I'm holding this to all five, not four, because it isn't really a retrieval
-question — it's whether the model follows an instruction it's given every
-single time. `generate.py`'s `GROUNDING_INSTRUCTION` unconditionally tells
-the model to "name the document your answer came from," and `build_prompt`
-labels every retrieved excerpt with `[from <source>]` before it ever reaches
-the model. On top of that, the relevance gate in `gate.py` has already
-refused anything too thin to answer from, so a question only reaches
-`generate()` at all once there's a genuinely relevant, clearly labeled
-document in front of it. For this to fail, the model would have to ignore an
-explicit, repeated instruction rather than lack the material to follow it —
-which is a real risk, but not one I should budget a miss for in advance.
+This isn't a retrieval problem, it's whether the model follows one simple,
+repeated instruction. `generate.py` labels every excerpt it hands the model
+with `[from <source>]` and tells it flat out to "name the document your
+answer came from." The gate has already blocked any question too thin to
+answer, so by the time a question reaches the model, a clearly labeled,
+relevant document is already sitting in the prompt. Naming it is just
+following an instruction, not finding something hard - so I expect all five,
+not four.
 
 ---
 
 ## 3. The relevance gate stops out-of-corpus questions
 
 When I ask a question my documents clearly don't cover, the relevance gate
-stops it and the system returns "I don't have enough information about that" —
+stops it and the system returns "I don't have enough information about that" -
 in at least 4 of 5 tries.
 
 <!-- The five questions are the ones in `OUT_OF_SCOPE` at the bottom of
@@ -74,68 +67,57 @@ in at least 4 of 5 tries.
      just keep five of them, or the "4 of 5" above has nothing to be 4 of. -->
 
 **Why this target:**
-I haven't run Milestone 4 yet, so I don't have my own measured distances to
-point at — this is a prediction, not a report. The five `OUT_OF_SCOPE`
-questions (capital of Mongolia, diesel oil changes, a World Cup result,
-ibuprofen dosage, a Rust for-loop) share almost no vocabulary with
-`campus_life`, which is entirely about one university's dorms, courses, and
-dining halls — I'd expect their embeddings to sit far from anything indexed.
-`config.py`'s comment on `THRESHOLD` says 0.6 is a starting point and "most
-corpora land somewhere between 0.45 and 0.75," so I'm leaving the default in
-place for now rather than guessing a tighter number with no data behind it.
-4 of 5, not 5 of 5, because one of the out-of-scope questions could plausibly
-share incidental vocabulary with a campus document (e.g. a course-related
-phrase) and land closer than the rest.
+I haven't run Milestone 4 yet, so this is a guess, not a measurement. My five
+`OUT_OF_SCOPE` questions (capital of Mongolia, diesel oil changes, a World
+Cup result, ibuprofen dosage, a Rust for-loop) are generic world facts with
+almost no words in common with `campus_life`, which is entirely about one
+university's dorms, courses, and dining halls - I expect them to sit far away
+from anything in the index. `config.py` already suggests `THRESHOLD = 0.6` as
+a reasonable starting point for most corpora, so I'm leaving it there instead
+of inventing a tighter number with no data behind it yet. 4 of 5, not 5 of 5,
+because one out-of-scope question could still get lucky and share a
+coincidental word with a campus document (say, "course" or "week") and land
+closer than the rest.
 
 ---
 
-## 4. Something about your chunks
+## 4. Chunks stay one document
 
-At least 4 of 5 sampled chunks are exactly one whole document — no chunk
+At least 4 of 5 sampled chunks are exactly one whole document - no chunk
 contains only part of a post, and no chunk silently merges two unrelated
 posts into one.
 
 **Why this target:**
-`corpora/README.md` says `campus_life` documents average about 317
-characters, and `chunker.py`'s own comment on `fallback_split` confirms it:
-at the starter's `CHUNK_SIZE = 800` / `CHUNK_OVERLAP = 120`, the corpus comes
-out as 88 documents → 88 chunks, because almost nothing reaches 800
-characters. So with the current fixed-size strategy, a chunk is already
-whichever whole post it came from — the risk isn't mid-sentence truncation,
-it's Milestone 3 tempting me to combine short, related posts (like
+`campus_life` documents average about 317 characters, well under the
+starter's 800-character chunk size - so today, every chunk is already a
+whole post; nothing gets cut mid-sentence. The real risk shows up in
+Milestone 3, if I start merging short, related posts (like
 `dining_pellew_dining_hall.txt` and its `_followup.txt`) to cut down the
-chunk count, and stitching two posts together in a way that blurs which
-sentence came from which. 4 of 5, not 5 of 5, because a small number of
-genuinely-one-topic pairs (like that dining hall post and its follow-up)
-combining cleanly would be a reasonable, intentional exception rather than a
-defect.
-
-
+chunk count - that's where sentences from two different posts could end up
+blurred together in one chunk. 4 of 5, not 5 of 5, because merging a
+genuinely-one-topic pair like that dining hall post and its follow-up is a
+reasonable choice, not a defect, so I don't want a perfect score to force me
+into treating every merge as a failure.
 
 ---
 
-## 5. Your choice
+## 5. Every answer names the correct source
 
 For at least 4 of my 5 in-scope questions, the source the system names is not
-just present, but actually correct — it's a document that genuinely supports
+just present, but actually correct - it's a document that genuinely supports
 the answer given, not a plausible-sounding filename pulled from the context
 window while the answer itself drifts from what that document says.
 
 **Why this target:**
-Criterion 2 only checks that a source gets named; it says nothing about
-whether that source is the *right* one. My work-study question is the case
-that worries me: `admin_campus_jobs_and_financial_aid.txt` and
-`money_jobs.txt` both turn up under a "jobs" search, and the correct document
-actually states the reverse of what I first assumed ("count against
-financial aid" isn't the direction the source takes). A model that names the
-right file but gets the direction backwards, or names the wrong file
-entirely because it's topically adjacent, is a more dangerous failure than an
-outright refusal — it looks trustworthy and isn't. 4 of 5, not 5 of 5,
-because I'm already expecting the work-study and dining-quality questions
-from criterion 1 to be the hard cases, and I'd rather set a target I can miss
-on a known-weak question than pretend citation accuracy is guaranteed.
-
-
+Criterion 2 only checks that *a* source gets named - not that it's the right
+one. My work-study question is the case that worries me most:
+`admin_campus_jobs_and_financial_aid.txt` and `money_jobs.txt` both come up
+under a "jobs" search, and it would be easy for a model to cite the wrong one
+of the two, or cite the right one while getting the direction backwards. A
+confident answer with the wrong citation is worse than a refusal, because it
+looks trustworthy and isn't. 4 of 5, not 5 of 5, because with two
+similar-sounding "jobs" documents in the corpus, I'd rather leave room for
+that one mix-up than pretend citation accuracy is guaranteed.
 
 ---
 
