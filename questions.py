@@ -23,9 +23,9 @@ names a target of "4 of 5", and four of three is not a thing.
 
 QUESTIONS = [
     # {"question": "...", "expects": "..."},
-    {"question": "What do students say is the difference between a work-study job and a non-work-study job?", "expects": "count against financial aid"},
-    {"question": "What do students say about the quality of food in the dining halls?", "expects": "better than expected"},
-    {"question": "How much reading per week should students expect in HIST 118 Modern World History?", "expects": "tabout 120 pages a week"},
+    {"question": "What do students say is the difference between a work-study job and a non-work-study job?", "expects": "work-study earnings don't count against your financial aid"},
+    {"question": "What happens to unused dining dollars at the end of the spring semester?", "expects": "disappears"},
+    {"question": "How much reading per week should students expect in HIST 118 Modern World History?", "expects": "about 120 pages a week"},
     {"question": "Why is the short wing of Innisfree Hall quieter than the rest of the building?", "expects": "the building is L-shaped"},
     {"question": "What's the best time to do laundry in Aldridge Hall to avoid a wait?", "expects": "Tuesday or Wednesday morning"},
 ]
