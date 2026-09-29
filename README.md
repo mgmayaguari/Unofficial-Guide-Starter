@@ -29,18 +29,33 @@
 
 ## Chunking Strategy
 
-**Chunk size:**
-**Overlap:**
+**Chunk size:** Split by paragraph
+**Overlap:** None
 
-<!-- What about YOUR documents made you pick these numbers? Short posts and
-     long sectioned guides don't want the same chunking, and "800 seemed
-     reasonable" earns nothing. Point at something you noticed when you read
-     the documents in Milestone 1.
+I picked `campus_life`, and its documents are short: about 317 characters on
+average, one to three paragraphs, and the useful information usually sits in
+a single sentence. The starter's fixed 800-character window never even cuts
+these documents - running it produces 88 documents and 88 chunks, one whole
+document per chunk every time. So the real question wasn't chunk size, it was
+whether one post should stay one chunk when it has more than one paragraph in
+it.
 
-     If you changed your mind partway through, say so and say why. That's worth
-     more than pretending you got it right first time.
+Splitting on the blank line between paragraphs answered that: it's a boundary
+the author already chose, so it never cuts a sentence in half the way a
+character count would. I went with no overlap for the same reason overlap
+exists in the first place - it exists to hand back a piece of a sentence that
+got cut off, and a paragraph break doesn't cut anything off.
 
-     Milestone 3. -->
+I did have to change my first pass. Splitting naively on every paragraph
+break turned every document's title line ("The Atrium", "Halden Hall") into
+its own chunk, because every one of the 88 documents opens with a short title
+line, a blank line, then the real content. That's 88 chunks - about a third
+of the total - that were just a few words with nothing to answer from. The
+fix was to fold the first paragraph into the second one instead of chunking
+it alone, since the title-then-body shape is true of every document in this
+corpus, not something a length cutoff needed to guess at. That took the
+corpus from 271 chunks down to 183, and the shortest chunk left is a real
+sentence ("Expect 4 hours a week outside class.") instead of a bare title.
 
 ## Sample Chunks
 
@@ -53,48 +68,54 @@
 
      Milestone 3. -->
 
-**Chunk 1** — source: `thread_bike_commute.txt#0` — produced by: `chunker`
+**Chunk 1** — source: `admin_add_drop_deadline.txt#0` — produced by: `chunker.py::split_documents`
 
 ```
-     ======================================================================
-     Chunk 1  |  source: thread_bike_commute.txt#0  |  produced by: chunker.py::fallback_split
-     ======================================================================
-     THREAD: Is a bike worth it for a 20 minute walk commute?
+======================================================================
+Chunk 1  |  source: admin_add_drop_deadline.txt#0  |  produced by: chunker.py::split_documents
+======================================================================
+On the add/drop deadline
 
-     --- reply 1 (14 votes) ---
-     Yeah. Cuts an 18 minute walk to about 6. The thing nobody mentions is storage — covered bike parking exists at three buildings and is full by 9am at all three.
-
-     --- reply 2 (9 votes) ---
-     Counterpoint, I sold mine. Between November and March the paths are either icy or salted and salt destroys a drivetrain in one season.
-
-     --- reply 3 (22 votes) ---
-     Both true. I keep a cheap bike for September to November and walk the rest of the year. Total cost was about $120 for the bike and I don't care what happens to it.
-
-     --- reply 4 (5 votes) ---
-     If you do get one, the campus does free registration and it's the only reason I got mine back after it was taken.
-
-     For each one, ask: could someone answer a question using only this,
-     without reading what came before or after?
+You can add a course through the end of the second week. Dropping is a longer window — through the end of week six — but a drop after week two shows as a W on your transcript. Nothing anywhere on the registrar's site says this plainly, and students find out from each other.
 ```
 
-**Chunk 2** — source: `` — produced by: ``
+**Chunk 2** — source: `course_cs_340_exams.txt#1` — produced by: `chunker.py::split_documents`
 
 ```
+======================================================================
+Chunk 2  |  source: course_cs_340_exams.txt#1  |  produced by: chunker.py::split_documents
+======================================================================
+Start the term project in week three, not week eight; everyone learns this the hard way.
 ```
 
-**Chunk 3** — source: `` — produced by: ``
+**Chunk 3** — source: `course_phys_130_workload.txt#0` — produced by: `chunker.py::split_documents`
 
 ```
+======================================================================
+Chunk 3  |  source: course_phys_130_workload.txt#0  |  produced by: chunker.py::split_documents
+======================================================================
+Workload for PHYS 130 Mechanics
+
+People keep asking so: 7 hours a week, plus 3 on lab weeks. That's real time, not optimistic time.
 ```
 
-**Chunk 4** — source: `` — produced by: ``
+**Chunk 4** — source: `dining_verrill_street_grill_followup.txt#1` — produced by: `chunker.py::split_documents`
 
 ```
+======================================================================
+Chunk 4  |  source: dining_verrill_street_grill_followup.txt#1  |  produced by: chunker.py::split_documents
+======================================================================
+Also worth saying: one register, so the queue is a single line no matter how busy. Nobody tells you this at orientation.
+
 ```
 
-**Chunk 5** — source: `` — produced by: ``
+**Chunk 5** — source: `housing_morrow_house.txt#1 ` — produced by: `chunker.py::split_documents`
 
 ```
+======================================================================
+Chunk 5  |  source: housing_morrow_house.txt#1  |  produced by: chunker.py::split_documents
+======================================================================
+The good: cheapest housing tier by about $900 a year, and the singles are real singles.
 ```
 
 ## Sample Answer

@@ -82,22 +82,47 @@ def fallback_split(
 
 def split_documents(documents: list[Document]) -> list[Chunk]:
     """
-    Split documents into chunks. ⚠️ REPLACE THE BODY OF THIS IN MILESTONE 3.
+    Split documents into chunks on paragraph breaks, with no overlap.
 
-    Right now it just calls the fallback. That is the plain, generic behaviour
-    the brief is talking about.
+    campus_life documents are one to three short paragraphs, and the useful
+    information usually sits in a single sentence within one of them - a
+    fixed 800-character window never even fires on documents this short
+    (see the module docstring: 88 documents in, 88 chunks out). Splitting on
+    paragraph breaks instead keeps each thought as its own chunk without
+    ever cutting a sentence in half, since a blank line is a boundary the
+    author already chose, not one imposed by a character count.
 
-    When you write your own strategy, set `produced_by` to
-    "chunker.py::split_documents" so your README's Sample Chunks section names
-    the right function. `app.py chunks` prints that string for you.
+    No overlap: paragraph breaks aren't a cut that loses anything, so there's
+    nothing for overlap to restore. Every chunk is also tagged with its
+    source filename, so a paragraph that reads as "this building" instead of
+    naming it still resolves - the model is told to name and reason from
+    that source file, not read the chunk in isolation.
 
-    Things worth thinking about before you write any code:
-      - Are your documents short posts or long guides?
-      - Is the useful information in one sentence, or spread over a paragraph?
-      - Would splitting on paragraph breaks keep more thoughts intact than
-        splitting on a character count?
+    One thing every campus_life document does the same way: it opens with a
+    short title line ("The Atrium", "Halden Hall"), then a blank line, then
+    the real content. Split naively, that title line becomes its own chunk -
+    a few words with nothing to answer from. All 88 documents do this, so the
+    fix isn't a length heuristic, it's just: the first paragraph is always
+    the title, so fold it into the second paragraph instead of chunking it
+    alone.
     """
-    return fallback_split(documents)
+    chunks: list[Chunk] = []
+    for doc in documents:
+        paragraphs = [p.strip() for p in doc.text.split("\n\n") if p.strip()]
+        if len(paragraphs) > 1:
+            paragraphs = [f"{paragraphs[0]}\n\n{paragraphs[1]}", *paragraphs[2:]]
+
+        for index, paragraph in enumerate(paragraphs):
+            chunks.append(
+                Chunk(
+                    text=paragraph,
+                    source=doc.source,
+                    index=index,
+                    produced_by="chunker.py::split_documents",
+                )
+            )
+
+    return chunks
 
 
 def describe(chunks: list[Chunk]) -> str:
