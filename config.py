@@ -40,9 +40,9 @@ TOP_K = 5               # how many chunks to pull back per question
 #
 # LOWER IS BETTER: 0.3 is a close match, 0.9 is unrelated.
 #
-# 0.6 is a reasonable starting point, not a right answer. Milestone 4 has you
-# measure your own two groups of distances and put the cutoff in the gap.
-# Most corpora land somewhere between 0.45 and 0.75.
+# Measured on campus_life (Milestone 4): the 5 QUESTIONS scored 0.157-0.442,
+# the 5 OUT_OF_SCOPE questions scored 0.787-0.923 — a clean gap with nothing
+# in it. 0.6 sits in that gap.
 THRESHOLD = 0.6
 
 

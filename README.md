@@ -120,23 +120,38 @@ The good: cheapest housing tier by about $900 a year, and the singles are real s
 
 ## Sample Answer
 
-<!-- One complete question and answer, pasted as text, with the source line
-     visible. Milestone 4. -->
-
-**Question:**
+**Question:** What happens to unused dining dollars at the end of the spring semester?
 
 **Answer:**
 
 ```
+  (best distance 0.241, cutoff 0.6)
+
+Whatever dining dollars are left in May (at the end of the spring semester) disappear, as they do not roll over to the following autumn (admin_dining_dollars.txt).
+
+Sources retrieved: admin_dining_dollars.txt, admin_meal_plan_changes.txt, dining_halden_hall.txt, dining_north_kitchen.txt, dining_pellew_dining_hall.txt
 ```
 
-**My relevance cutoff:**
+**My relevance cutoff:** 0.6 (the starter default - measured, not moved)
 
-<!-- The number you set in config.py, and how you got there.
+I ran my 5 `QUESTIONS` and the 5 `OUT_OF_SCOPE` questions through `app.py retrieve` and recorded the best distance for each. The two groups came out cleanly separated, with nothing between 0.442 and 0.787:
 
-     You ran five questions your corpus covers and the five in OUT_OF_SCOPE
-     that it clearly doesn't, and wrote down the best distance for each. What
-     did those two groups look like? Where was the gap? Put the actual numbers
+| Question | In corpus? | Best distance |
+|---|---|---|
+| Why is the short wing of Innisfree Hall quieter than the rest of the building? | yes | 0.157 |
+| What happens to unused dining dollars at the end of the spring semester? | yes | 0.241 |
+| How much reading per week should students expect in HIST 118 Modern World History? | yes | 0.273 |
+| What's the best time to do laundry in Aldridge Hall to avoid a wait? | yes | 0.278 |
+| What do students say is the difference between a work-study job and a non-work-study job? | yes | 0.442 |
+| What is the capital of Mongolia? | no | 0.787 |
+| What is the recommended dosage of ibuprofen for a headache? | no | 0.824 |
+| Who won the 1994 World Cup? | no | 0.847 |
+| How do I write a for loop in Rust? | no | 0.877 |
+| How do I change the oil in a diesel engine? | no | 0.923 |
+
+The starter's default of 0.6 already sits almost in the middle of that gap (0.158 of margin below the lowest in-scope score, 0.187 above the highest out-of-scope one is on the other side of 0.787), so I kept it rather than moving it for no reason. I didn't need the "most corpora land between 0.45 and 0.75" note from `config.py` - my own numbers gave me the gap directly.
+
+<!-- Put the actual numbers
      here — the table below wants all ten rows.
 
      Milestone 4. -->
