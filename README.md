@@ -309,6 +309,16 @@ The named source is real and it's the right file, but the claim in the answer is
 
      Milestone 3. -->
 
+**Criterion 4 miss — chunking stage, but not a chunking bug.**
+
+The miss traces to chunking, but the mechanism isn't a defect in `split_documents` - it's that the target sentence describes a chunker I no longer have. I wrote "chunks are exactly one whole document" back when the starter's fixed 800-character window was still running, and on `campus_life` that window never fires: 88 documents in, 88 chunks out, one per document, every time. Once I replaced it with paragraph splitting in Milestone 3, that stopped being true on purpose - a 3-paragraph post now produces 3 chunks, none of which is the whole document. Of the 88 documents in this corpus, most have more than one paragraph, so a random sample of chunks is mostly going to land on "part of a post," not "the whole post." That's exactly what the 1-of-5 sample showed: the one hit (`admin_housing_lottery.txt#0`) is whole only because that document happens to be a single paragraph. I'm not treating this as something to fix in `chunker.py` — the paragraph splitting is doing what I want (see Chunking Strategy above). It's the criterion that's stale, not the code.
+
+**Criterion 5's one failure — generation stage, and it's real.**
+
+Every run, the Innisfree Hall noise question gets the exact right chunk: `housing_innisfree_hall_noise.txt#0` retrieves at distance 0.157, and its full text is "Moderate; the building is l-shaped and the short wing is much quieter." That's the answer, sitting in the prompt, labeled with its source, every single time. And every single time, across all 3 runs, the model answers that the documents don't explain *why* the short wing is quieter - flatly wrong, and wrong the same way each time, which rules out a one-off hiccup. The failure is entirely in generation, not retrieval or chunking: the model has the causal clause ("l-shaped... short wing is much quieter") right in front of it and doesn't connect it to a "why" question, maybe because the sentence states the fact rather than spelling out "because it's l-shaped, the short wing is quieter." It's a pattern worth watching for on other causal ("why") questions, not just this one, since none of my other four questions ask "why" - I only have one data point, but it's a clean one.
+
+I didn't miss anything else, and none of my other targets look set low in hindsight. Criterion 5's 4-of-5 target is the one I'd tighten if I had more than 5 test questions - 4 of 5 is generous enough that one reproducible generation bug still counts as a MET, and this run log is proof that "held the target" and "no real bugs" aren't the same thing.
+
 ## The Improvement
 
 **What I changed:**
