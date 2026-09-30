@@ -153,6 +153,8 @@ The starter's default of 0.6 already sits almost in the middle of that gap (0.15
 
 **2.** For Milestone 4, instead of running `python app.py retrieve "..."` ten times by hand in my terminal, I had Claude run all 5 `QUESTIONS` and all 5 `OUT_OF_SCOPE` questions and report back the best distance for each one. It saved me the manual copy-pasting, but I still read the actual numbers myself and picked the cutoff - Claude just ran the commands and organized the output into the table above.
 
+**3.** In unit 2, I asked Claude to help me spot the pattern behind why my fuzzy `scorer.judge` was passing a wrong answer (the Innisfree question) — it traced the false positive to `partial_token_set_ratio` reducing both strings to shared/unique word sets, so a short `expects` phrase made mostly of stopwords ("the", "is") could score 100 against an answer that never said the actual content word. It proposed and I verified `max(partial_ratio, token_set_ratio)` against all 5 real logged answers before accepting the fix. I originally asked it to pick an improvement for Milestone 4 (hybrid search, BM25 + semantic), and it was upfront that hybrid search wouldn't fix the bug my own diagnosis had already named, since retrieval was never the problem — I had it implement and test hybrid search anyway, and when the before/after run logs confirmed it changed nothing, I had it undo that work and instead tighten `generate.py`'s grounding prompt, which is the fix diagnosis actually pointed at. When I tested that fix, Claude caught its own mistake mid-way — the first version of the new prompt rule used the real Innisfree sentence as its example, which would've made the test pass by leaking the answer into the prompt rather than fixing the behavior — and rewrote the example using unrelated made-up text (icy road, slow traffic) before I ran the real eval.
+
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
      claims earns nothing.
@@ -368,17 +370,14 @@ So: measurably better, still not reliable, and the specific failure mode it part
 
 ## What's Still Broken
 
-<!-- For each criterion still missed after your fix: what you'd do about it,
-     and why you stopped where you did.
+**Criterion 5 — Innisfree still fails about 1 run in 3.** The grounding-prompt fix helped (3/3 failures down to roughly 1/3), but it isn't a real fix, it's a nudge the model sometimes ignores - and even when it "passes," 2 of the 3 passing runs produce a self-contradictory sentence that states the l-shape reason while simultaneously claiming no reason was given. What I'd do about it: stop iterating on the prompt and test whether the problem is the model rather than the wording, by re-running the same question against a stronger model (swapping `config.MODEL` away from `gemini-3.5-flash-lite`, the "lite" tier, for just this one question) to see if the hedging goes away entirely. I stopped short of that because it changes a cost/quality tradeoff the rest of the project didn't ask me to reconsider, and because I only have one "why" question in my test set - I don't have enough evidence yet to know if this is a "why question" problem in general or an Innisfree-specific quirk, and writing more test questions to find out is outside this unit's one-change rule.
 
-     "I ran out of time" is fine if it's true. Pretending nothing is left is
-     not.
+**Criterion 4 - resolved by revision, not by code.** The original wording ("chunks are exactly one whole document") is still a literal MISS (1 of 5) and always will be, because paragraph splitting deliberately produces multiple chunks per multi-paragraph document. I didn't change the chunker to chase that number - the paragraph splitting is doing what I want it to do (see Chunking Strategy). Instead I revised the target itself in `criteria.md` to test what I actually meant (no chunk cut mid-sentence, no chunk merging two documents), which the same 5-chunk sample passes 5 of 5. Nothing here needed more engineering time; it needed a more honest target.
 
-     Milestone 5. -->
+**A scorer gap I noticed but didn't chase.** While re-running the eval for the writeup above, one HIST 118 answer — "Students in HIST 118 Modern World History should expect about 120 pages of reading per week" - scored a false negative against `expects: "about 120 pages a week"` (both `partial_ratio` and `token_set_ratio` landed at 81, just under my 85 threshold). That's a real, correct answer my own scorer would mark wrong. I didn't lower the threshold to chase this one case, because I don't know yet whether 80 is a safe cutoff or whether it would let a wrong answer back in the way `partial_token_set_ratio` did - that needs more logged examples than I currently have, not a quick number change.
 
 ## What I'd Do Differently
 
-<!-- Knowing what you know now — which of your five criteria would you write
-     differently, and why?
+Criterion 5's 4-of-5 target is the one I'd write differently. It let a real, reproducible generation bug hide behind a MET verdict for an entire unit - the run log always said 4 of 5, technically passing, right up until I actually read what the answer said instead of just counting passes. Next time I'd either raise it to 5 of 5 for a 5-question test set (so any single reproducible failure forces a MISS instead of hiding inside "close enough"), or keep 4 of 5 but add a rule that a MET verdict still requires reading every failing answer by hand before signing off on it — the number alone isn't enough evidence that nothing is wrong.
 
-     Milestone 5. -->
+Criterion 4 is the other one, for a different reason: I wrote it before Milestone 3 existed, describing a chunker I hadn't built yet. Next time I'd write chunk-quality criteria *after* deciding on a chunking strategy, not before — or if I have to write it before (as this project's structure requires), I'd phrase it around the property I actually care about ("no chunk cut mid-sentence") instead of a specific number that only happens to describe one particular chunking implementation.
