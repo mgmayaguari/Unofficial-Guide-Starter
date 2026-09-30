@@ -321,34 +321,50 @@ I didn't miss anything else, and none of my other targets look set low in hindsi
 
 ## The Improvement
 
-**What I changed:**
+**What I changed:** Tightened `generate.py`'s `GROUNDING_INSTRUCTION` with one new rule, aimed squarely at the Innisfree bug: *"A 'why' question is answered whenever the documents state a plausible cause in the same breath as the effect, no matter the punctuation joining them - a period, a semicolon, or 'and' all count equally, and the word 'because' doesn't need to appear at all... Treat two facts stated side by side as cause and effect if that's the only relationship that makes sense, and state the connection yourself."* The example I used in the instruction is a made-up one ("the road is icy; traffic is moving slowly") rather than the actual Innisfree sentence, on purpose - putting the real answer in the prompt would make the test question pass by feeding it the answer, not by fixing the underlying behavior.
 
-**Why I picked it:**
-
-<!-- Connect it to a specific diagnosis above in one sentence. If you can't,
-     you picked a fix because it sounded impressive. -->
+**Why I picked it:** This is the fix my own diagnosis named directly: the model was handed the exact chunk containing "the building is l-shaped and the short wing is much quieter" and still said no explanation was given, every single time, across all 3 runs of the original diagnosis. That's a generation-stage problem - retrieval and chunking were never at fault - so the fix belongs in the prompt that tells the model how to read what it's given, not in retrieval or chunking.
 
 ### Run Log — After
 
-<!-- Same format, same five criteria, three runs each.
-     `python run_eval.py --label after` -->
+`python run_eval.py --label after`, same fixed scorer, same semantic-only retrieval - full transcript in `results/run_2026-09-29_2334_after.md`.
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 4. Chunks stay one document | 4 of 5 | 1 of 5 | 1 of 5 | 1 of 5 | MISS |
+| 5. Every answer names the correct source | 4 of 5 | 5 of 5 | 4 of 5 | 5 of 5 | MET |
+
+Real output - the Innisfree question, all 3 runs, next to the same question from the pre-fix baseline:
+
+```
+Before (results/run_2026-09-29_2317_before.md) — all 3 runs identical:
+Based on the provided documents, there is no explanation given for why the
+short wing of Innisfree Hall is quieter; it only states that it is quieter
+(housing_innisfree_hall_noise.txt).
+
+After (results/run_2026-09-29_2334_after.md):
+— run 1: The documents do not provide a reason for why the short wing of
+  Innisfree Hall is quieter than the rest of the building; they only state
+  that the building is l-shaped and the short wing is much quieter
+  (housing_innisfree_hall_noise.txt).
+— run 2: The documents do not contain information explaining why the short
+  wing of Innisfree Hall is quieter than the rest of the building
+  (housing_innisfree_hall_noise.txt).
+— run 3: The documents do not provide a reason for why the short wing of
+  Innisfree Hall is quieter; they only state that the building is l-shaped
+  and the short wing is much quieter (housing_innisfree_hall_noise.txt).
+```
 
 **Did it help?**
 
-<!-- Say plainly whether it did, and how you know. If it made things worse,
-     say that — a change that backfired, honestly reported, earns full credit
-     and is more interesting than one that worked. What matters is that you can
-     tell.
+Partially, and I want to be precise about what actually changed rather than round it up to a clean win. Before the fix, this question failed identically in all 3 runs - the model never once mentioned the l-shape. After the fix, it mentions the l-shape in 2 of 3 runs (run 1 and run 3), and criterion 5's per-run score moved from a flat 4-of-5 every time to 5, 4, 5 - real, measurable improvement in how often the fact makes it into the answer.
 
-     Milestone 4. -->
+But it's not a clean fix, and I'm not calling it one. Look closely at runs 1 and 3: the model states the l-shape fact, but wraps it in a sentence that simultaneously *denies* giving a reason - "The documents do not provide a reason... they only state that the building is l-shaped and the short wing is much quieter." That's self-contradictory: it names the reason in the same breath as claiming there isn't one. It passes the scorer, because the expected phrase is there as a substring, but a person reading that sentence would still come away confused about whether the system thinks it answered the question. And run 2 shows the original failure mode didn't go away, it just got less frequent — the instruction is a nudge the model sometimes follows, not a guarantee.
+
+So: measurably better, still not reliable, and the specific failure mode it partially fixed came back in an odd half-fixed shape (right fact, wrong framing) that a stricter scorer than mine would probably still catch. If I kept iterating, the next step wouldn't be a bigger prompt change — it'd be figuring out why the model hedges even when it has the right fact in hand, which might be more about `MODEL` (`gemini-3.5-flash-lite`) than about the prompt.
 
 ## What's Still Broken
 

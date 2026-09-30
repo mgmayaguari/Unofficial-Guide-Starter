@@ -19,19 +19,29 @@ def judge(question, expects, answer, results) -> bool:
   have to appear in 'answer' verbatim, just closely enough.
 
   q: 'give', expect: 'about 120 pages a week', answer: '...roughly 120 pages
-  per week...' — a plain substring check misses this. partial_token_set_ratio
-  treats expects as a bag of words and checks how much of that bag shows up
-  anywhere in answer, so reordering, extra words around it, and small wording
-  changes (about -> roughly) don't cost anything, while an answer missing the
-  actual words in expects still scores low.
+  per week...' — a plain substring check misses this, but partial_ratio and
+  token_set_ratio both score it high.
+
+  Tried partial_token_set_ratio first and it scored a genuinely wrong answer
+  a perfect 100: it reduces both strings to their shared/unique word sets
+  before comparing, so a short 'expects' phrase made mostly of common words
+  ("the", "is") can look like a full match against an answer that never
+  mentions the one word that actually matters ("l-shaped"). Neither
+  partial_ratio nor token_set_ratio has that failure on its own, so this
+  takes the higher of the two instead — a real paraphrase scores high on at
+  least one of them, but stopword overlap alone doesn't fool both.
   """
   expects_clean = expects.lower().strip()
   answer_clean = answer.lower()
 
-  return (
-    expects_clean in answer_clean
-    or fuzz.partial_token_set_ratio(expects_clean, answer_clean) >= FUZZY_THRESHOLD
+  if expects_clean in answer_clean:
+    return True
+
+  score = max(
+    fuzz.partial_ratio(expects_clean, answer_clean),
+    fuzz.token_set_ratio(expects_clean, answer_clean),
   )
+  return score >= FUZZY_THRESHOLD
 
 def retrieval_hits(expects, results)-> bool:
   """
