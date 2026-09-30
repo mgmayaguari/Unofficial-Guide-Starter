@@ -99,6 +99,23 @@ genuinely-one-topic pair like that dining hall post and its follow-up is a
 reasonable choice, not a defect, so I don't want a perfect score to force me
 into treating every merge as a failure.
 
+> **Revised in unit 2:** At least 4 of 5 sampled chunks are cut on a
+> paragraph boundary, not mid-sentence, and no chunk contains text from two
+> different documents.
+>
+> **Why revised:** I wrote the original assuming the starter's fallback
+> chunker — where a chunk and a document were the same size on this corpus,
+> so "whole document" was a real, measurable thing. Milestone 3 replaced
+> that with paragraph splitting on purpose: a 3-paragraph post is *supposed*
+> to become 3 chunks now, so "exactly one whole document" stopped being
+> something a working chunker could satisfy for any document with more than
+> one paragraph. Sampling 5 chunks against the literal original wording got
+> 1 of 5 (`results/run_2026-09-29_2131.md`), not because anything is cut
+> wrong, but because the target described a chunker I no longer have. The
+> revised wording tests the thing I actually care about — no sentence cut in
+> half, no two posts blurred into one chunk — which the same sample passes
+> 5 of 5.
+
 ---
 
 ## 5. Every answer names the correct source
