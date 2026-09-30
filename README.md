@@ -283,11 +283,11 @@ The named source is real and it's the right file, but the claim in the answer is
 
 | # | Criterion | Verdict | How I decided |
 |---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| 1 | Retrieved chunk contains the answer | MET | Target was 4 of 5. All 5 questions had the answer in their top retrieved chunk, and retrieval doesn't change between runs, so 5 of 5 held all three times, not just once. |
+| 2 | Every answer names a source | MET | Target was 5 of 5. Every answer in all three runs named a source file, so it held all three times, not just on average. |
+| 3 | Gate stops out-of-corpus questions | MET | Target was 4 of 5. All 5 `OUT_OF_SCOPE` questions got refused, and the gate is a fixed comparison against a distance that doesn't change between runs, so this is one measurement, not three lucky ones. |
+| 4 | Chunks stay one document | MISS | Target was 4 of 5. Only 1 of 5 sampled chunks was a whole document - the other 4 are single paragraphs of longer posts, which is what the paragraph-splitting chunker does on purpose. The criterion's wording assumed the pre-Milestone-3 fallback chunker, where a chunk and a document were the same thing; once I actually split by paragraph, that stopped being true for any document with more than one paragraph. This is a MISS against what I wrote, not a sign the chunker is broken. |
+| 5 | Every answer names the correct source | MET | Target was 4 of 5, and it landed at exactly 4 of 5 in all three runs - not 4, 3, 4. The one failure is the same question every time (Innisfree Hall noise): the model cites the right file but the answer's own claim ("there is no mention of why") is false, which I'm counting as a wrong citation because the source doesn't actually support the answer given. Because the same question fails the same way every run, this is a real, repeatable defect, not run-to-run noise - worth a Diagnoses entry even though the target technically held. |
 
 ## Diagnoses
 
