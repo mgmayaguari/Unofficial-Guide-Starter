@@ -336,8 +336,10 @@ I didn't miss anything else, and none of my other targets look set low in hindsi
 | 1. Retrieved chunk contains the answer | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
 | 2. Every answer names a source | 5 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
 | 3. Gate stops out-of-corpus questions | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
-| 4. Chunks stay one document | 4 of 5 | 1 of 5 | 1 of 5 | 1 of 5 | MISS |
+| 4. Chunks stay one document (revised wording) | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
 | 5. Every answer names the correct source | 4 of 5 | 5 of 5 | 4 of 5 | 5 of 5 | MET |
+
+Criterion 4 is scored here against the revised target from `criteria.md` ("cut on a paragraph boundary, not mid-sentence, no chunk merges two documents"), not the original "whole document" wording — the chunker didn't change between before and after, so this is the same 5-chunk sample and result reported there. The `Run Log — Before` table on Milestone 1 correctly keeps the 1-of-5 MISS against the *original* wording, since that result is the actual evidence that the wording needed revising in the first place; going back and rescoring it against the revision would erase the reason the revision happened.
 
 Real output - the Innisfree question, all 3 runs, next to the same question from the pre-fix baseline:
 
