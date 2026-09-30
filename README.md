@@ -180,15 +180,95 @@ The starter's default of 0.6 already sits almost in the middle of that gap (0.15
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 4. Chunks stay one document | 4 of 5 | 1 of 5 | 1 of 5 | 1 of 5 | MISS |
+| 5. Every answer names the correct source | 4 of 5 | 4 of 5 | 4 of 5 | 4 of 5 | MET |
 
-<!-- Underneath, paste the REAL output for each criterion from one of your
-     runs — the actual text your system produced, not a description of it.
-     Name the file and function that produced it. -->
+Criteria 1, 3, and 4 don't change between runs — retrieval and chunking are
+deterministic, so one measurement is the whole measurement for those, the
+same way the out-of-scope gate results don't vary. Only criteria 2 and 5
+depend on what the model actually wrote, and those held steady across all
+three runs anyway (source: `results/run_2026-09-29_2131.md`, scored with the
+original strict `scorer.judge`).
+
+### Criterion 1 — Retrieved chunk contains the answer
+
+Produced by `store.py::search`, question from `questions.py::QUESTIONS`. The top result is the chunk that answers the question:
+
+```
+Question: Why is the short wing of Innisfree Hall quieter than the rest of the building?
+
+#   distance   source                           preview
+----------------------------------------------------------------------------------------------------
+1   0.1573     housing_innisfree_hall_noise.txt Noise levels in Innisfree Hall  Asked about this a l...
+2   0.4440     housing_old_brewhouse_noise.txt  Noise levels in Old Brewhouse  Asked about this a lo...
+3   0.4597     housing_fenwick_court_noise.txt  Noise levels in Fenwick Court  Asked about this a lo...
+4   0.4688     housing_innisfree_hall.txt       Innisfree Hall — what it's actually like  Transferre...
+5   0.5293     housing_morrow_house_noise.txt   Noise levels in Morrow House  Asked about this a lot...
+
+Gate: best distance 0.157 is under the 0.6 cutoff
+```
+
+The full text of that top chunk (`housing_innisfree_hall_noise.txt#0`) is "Noise levels in Innisfree Hall — Asked about this a lot so writing it down. Moderate; the building is l-shaped and the short wing is much quieter." — the answer is right there.
+
+### Criterion 2 — Every answer names a source
+
+Produced by `generate.py::answer_from_chunks`, from `results/run_2026-09-29_2131.md`:
+
+```
+Whatever is left in May disappears (it does not roll over from the spring to the following autumn).
+
+Source: admin_dining_dollars.txt
+```
+
+### Criterion 3 — Gate stops out-of-corpus questions
+
+Produced by `run_eval.py::check_out_of_scope`, from `results/run_2026-09-29_2131.md`:
+
+```
+| Out-of-scope question | Best distance | Gate |
+|---|---|---|
+| What is the capital of Mongolia? | 0.787 | refused |
+| How do I change the oil in a diesel engine? | 0.923 | refused |
+| Who won the 1994 World Cup? | 0.847 | refused |
+| What is the recommended dosage of ibuprofen for a headache? | 0.824 | refused |
+| How do I write a for loop in Rust? | 0.877 | refused |
+```
+
+### Criterion 4 — Chunks stay one document
+
+Produced by `chunker.py::split_documents`, a random sample of 5 chunks (seed 42):
+
+```
+housing_tamsin_court_laundry.txt#0  whole document? False  (191 of 286 chars)
+'Laundry in Tamsin Court\n\nMachines take in-unit washer-dryer. There are eight washers and six dryers for the building, which is the wrong ratio and means the dryers back up on Sunday evenings.'
+
+course_cs_210_exams.txt#0  whole document? False  (159 of 237 chars)
+'CS 210 Data Structures — assessment\n\nTwo midterms and a final, all drawn from lecture material rather than the textbook. Midterms are curved, the final is not.'
+
+admin_housing_lottery.txt#0  whole document? True  (397 of 397 chars)
+"On the housing lottery\n\nThe housing lottery is not random in the way most people assume. Rising sophomores get a number drawn at random, but juniors and seniors are ordered by accumulated credit hours first, and only tie-break randomly. That means a senior who took summer courses reliably beats a senior who didn't. Numbers come out the second week of March and selection runs over four evenings."
+
+course_phys_130_exams.txt#0  whole document? False  (127 of 194 chars)
+'PHYS 130 Mechanics — assessment\n\nThree midterms, no final, plus a lab practical. Not curved, but the lowest midterm is dropped.'
+
+course_math_220.txt#2  whole document? False  (112 of 383 chars)
+'The one piece of advice: the problem sets are the course; the lectures make sense afterwards rather than during.'
+```
+
+Only 1 of 5 is the whole document — the other 4 are single paragraphs of a longer document, which is what `split_documents` is supposed to do for multi-paragraph posts. The criterion's wording (written before Milestone 3 existed) doesn't match that on purpose; see Diagnoses below.
+
+### Criterion 5 — Every answer names the correct source
+
+Produced by `generate.py::answer_from_chunks`, from `results/run_2026-09-29_2131.md` — this is the one that fails it:
+
+```
+Based on the provided documents, there is no mention of *why* the short wing is quieter, only that it is. (Source: housing_innisfree_hall_noise.txt)
+```
+
+The named source is real and it's the right file, but the claim in the answer is false — that same document's text (see Criterion 1 above) says plainly "the building is l-shaped and the short wing is much quieter." The citation points at the right place; the model just didn't use what was in it.
 
 ## Verdicts
 
